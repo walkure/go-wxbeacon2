@@ -16,13 +16,13 @@ var wxCbFunc WxCallback
 type commonData struct {
 	DeviceId     string
 	Sequence     byte
-	Temp         float32
-	Humid        float32
+	Temp         float64
+	Humid        float64
 	AmbientLight uint16
-	UVIndex      float32
-	Pressure     float32
-	SoundNoise   float32
-	VBattery     float32
+	UVIndex      float64
+	Pressure     float64
+	SoundNoise   float64
+	VBattery     float64
 }
 
 type WxIMData struct {
@@ -34,8 +34,8 @@ type WxIMData struct {
 
 type WxEPData struct {
 	commonData
-	DisconfortIndex float32
-	HeatStroke      float32
+	DisconfortIndex float64
+	HeatStroke      float64
 }
 
 //cast pattern : https://play.golang.org/p/n1_YO_t2gYK
@@ -45,18 +45,18 @@ func parseIM(deviceId string, data []byte) WxIMData {
 
 	parsed.DeviceId = deviceId
 	parsed.Sequence = data[2]
-	parsed.Temp = float32(int16(binary.LittleEndian.Uint16(data[3:5]))) / 100
-	parsed.Humid = float32(binary.LittleEndian.Uint16(data[5:7])) / 100
+	parsed.Temp = float64(int16(binary.LittleEndian.Uint16(data[3:5]))) / 100
+	parsed.Humid = float64(binary.LittleEndian.Uint16(data[5:7])) / 100
 	parsed.AmbientLight = binary.LittleEndian.Uint16(data[7:9])
-	parsed.UVIndex = float32(binary.LittleEndian.Uint16(data[9:11])) / 100
-	parsed.Pressure = float32(binary.LittleEndian.Uint16(data[11:13])) / 10
-	parsed.SoundNoise = float32(binary.LittleEndian.Uint16(data[13:15])) / 100
+	parsed.UVIndex = float64(binary.LittleEndian.Uint16(data[9:11])) / 100
+	parsed.Pressure = float64(binary.LittleEndian.Uint16(data[11:13])) / 10
+	parsed.SoundNoise = float64(binary.LittleEndian.Uint16(data[13:15])) / 100
 
 	parsed.AccelerationX = binary.LittleEndian.Uint16(data[15:17])
 	parsed.AccelerationY = binary.LittleEndian.Uint16(data[17:19])
 	parsed.AccelerationZ = binary.LittleEndian.Uint16(data[19:21])
 
-	parsed.VBattery = float32(int16(data[21])+100) / 100
+	parsed.VBattery = float64(int16(data[21])+100) / 100
 
 	return parsed
 }
@@ -66,17 +66,17 @@ func parseEP(deviceId string, data []byte) WxEPData {
 
 	parsed.DeviceId = deviceId
 	parsed.Sequence = data[2]
-	parsed.Temp = float32(int16(binary.LittleEndian.Uint16(data[3:5]))) / 100
-	parsed.Humid = float32(binary.LittleEndian.Uint16(data[5:7])) / 100
+	parsed.Temp = float64(int16(binary.LittleEndian.Uint16(data[3:5]))) / 100
+	parsed.Humid = float64(binary.LittleEndian.Uint16(data[5:7])) / 100
 	parsed.AmbientLight = binary.LittleEndian.Uint16(data[7:9])
-	parsed.UVIndex = float32(binary.LittleEndian.Uint16(data[9:11])) / 100
-	parsed.Pressure = float32(binary.LittleEndian.Uint16(data[11:13])) / 10
-	parsed.SoundNoise = float32(binary.LittleEndian.Uint16(data[13:15])) / 100
+	parsed.UVIndex = float64(binary.LittleEndian.Uint16(data[9:11])) / 100
+	parsed.Pressure = float64(binary.LittleEndian.Uint16(data[11:13])) / 10
+	parsed.SoundNoise = float64(binary.LittleEndian.Uint16(data[13:15])) / 100
 
-	parsed.DisconfortIndex = float32(binary.LittleEndian.Uint16(data[15:17])) / 100
-	parsed.HeatStroke = float32(binary.LittleEndian.Uint16(data[17:19])) / 100
+	parsed.DisconfortIndex = float64(binary.LittleEndian.Uint16(data[15:17])) / 100
+	parsed.HeatStroke = float64(binary.LittleEndian.Uint16(data[17:19])) / 100
 
-	parsed.VBattery = float32(int16(data[21])+100) / 100
+	parsed.VBattery = float64(int16(data[21])+100) / 100
 
 	return parsed
 }
