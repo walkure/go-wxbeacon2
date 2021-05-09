@@ -36,5 +36,4 @@ func process(data interface{}){
 
 # notice
  - Currently this code supports `Limited/General Broadcaster` mode(see reference).
- - You should run this code as `root` user(or `bluetooth` group on Raspberry OS).
-   - see also: [Bluetooth does not work with Raspbian Stretch and Raspberry Pi 3](https://raspberrypi.stackexchange.com/questions/71333/bluetooth-does-not-work-with-raspbian-stretch-and-raspberry-pi-3)
+ - You should run this code as `root` user(or CAP_NET_ADMIN capability).
