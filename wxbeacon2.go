@@ -3,6 +3,7 @@ package wxbeacon2
 import (
 	"encoding/binary"
 	"log"
+	"errors"
 
 	"github.com/bettercap/gatt"
 )
@@ -95,45 +96,55 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 	}
 }
 
-func (d WxBeaconDevice)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+func (dev WxBeaconDevice)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 
-	if p.ID() != d.targetDeviceId {
+	if p.ID() != dev.targetDeviceId {
 		return
 	}
 
-	if d.wxCbFunc == nil {
+	if dev.wxCbFunc == nil {
 		return
 	}
 
 	switch p.Name() {
 	case "EP":
-		d.wxCbFunc(parseEP(p.ID(), a.ManufacturerData))
+		dev.wxCbFunc(parseEP(p.ID(), a.ManufacturerData))
 	case "IM":
-		d.wxCbFunc(parseIM(p.ID(), a.ManufacturerData))
+		dev.wxCbFunc(parseIM(p.ID(), a.ManufacturerData))
 	default:
 		log.Fatalf("Unknown Name:%s", p.Name())
 	}
 }
 
-func WaitForReceiveData(deviceId string, cb WxCallback) (*WxBeaconDevice,error) {
-
-	d, err := gatt.NewDevice()
-	if err != nil {
-		return nil,err
-	}
+func NewDevice(deviceId string, cb WxCallback) *WxBeaconDevice {
 	dev := WxBeaconDevice{}
 
 	dev.targetDeviceId = deviceId
 	dev.wxCbFunc = cb
+	return &dev
+}
+
+func (dev *WxBeaconDevice)WaitForReceiveData() error {
+
+	d, err := gatt.NewDevice()
+	if err != nil {
+		return err
+	}
+
 	dev.device = d
 
 	// Register handlers.
 	d.Handle(gatt.PeripheralDiscovered(dev.onPeriphDiscovered))
 	d.Init(onStateChanged)
 
-	return &dev,nil
+	return nil
 }
 
-func (d WxBeaconDevice) Stop() error {
-	return d.device.Stop()
+func (dev *WxBeaconDevice) Stop() error {
+	if dev.device == nil{
+		return errors.New("device not initialized")
+	}
+	err := dev.device.Stop()
+	dev.device = nil
+	return err
 }

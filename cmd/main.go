@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	_,err := wxbeacon2.WaitForReceiveData("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", printData)
+	dev := wxbeacon2.NewDevice("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", printData)
+	err := dev.WaitForReceiveData()
 	if err != nil {
 		log.Fatalf("Failed to open device, err: %s\n", err)
 		return
