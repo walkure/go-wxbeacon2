@@ -1,13 +1,13 @@
 package main
 
 import (
-	"../../go-wxbeacon2"
+	"github.com/walkure/go-wxbeacon2"
 	"fmt"
 	"log"
 )
 
 func main() {
-	err := wxbeacon2.WaitForReceiveData("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", printData)
+	_,err := wxbeacon2.WaitForReceiveData("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", printData)
 	if err != nil {
 		log.Fatalf("Failed to open device, err: %s\n", err)
 		return

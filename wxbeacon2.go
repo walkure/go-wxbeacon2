@@ -7,11 +7,14 @@ import (
 	"github.com/bettercap/gatt"
 )
 
-var targetDeviceId string
-
 type WxCallback func(data interface{})
 
-var wxCbFunc WxCallback
+
+type WxBeaconDevice struct{
+	wxCbFunc WxCallback
+	device gatt.Device
+	targetDeviceId string
+}
 
 type commonData struct {
 	DeviceId     string
@@ -92,39 +95,45 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 	}
 }
 
-func onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+func (d WxBeaconDevice)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 
-	if p.ID() != targetDeviceId {
+	if p.ID() != d.targetDeviceId {
 		return
 	}
 
-	if wxCbFunc == nil {
+	if d.wxCbFunc == nil {
 		return
 	}
 
 	switch p.Name() {
 	case "EP":
-		wxCbFunc(parseEP(p.ID(), a.ManufacturerData))
+		d.wxCbFunc(parseEP(p.ID(), a.ManufacturerData))
 	case "IM":
-		wxCbFunc(parseIM(p.ID(), a.ManufacturerData))
+		d.wxCbFunc(parseIM(p.ID(), a.ManufacturerData))
 	default:
 		log.Fatalf("Unknown Name:%s", p.Name())
 	}
 }
 
-func WaitForReceiveData(deviceId string, cb WxCallback) error {
+func WaitForReceiveData(deviceId string, cb WxCallback) (*WxBeaconDevice,error) {
 
 	d, err := gatt.NewDevice()
 	if err != nil {
-		return err
+		return nil,err
 	}
+	dev := WxBeaconDevice{}
 
-	targetDeviceId = deviceId
-	wxCbFunc = cb
+	dev.targetDeviceId = deviceId
+	dev.wxCbFunc = cb
+	dev.device = d
 
 	// Register handlers.
-	d.Handle(gatt.PeripheralDiscovered(onPeriphDiscovered))
+	d.Handle(gatt.PeripheralDiscovered(dev.onPeriphDiscovered))
 	d.Init(onStateChanged)
 
-	return nil
+	return &dev,nil
+}
+
+func (d WxBeaconDevice) Stop() error {
+	return d.device.Stop()
 }
