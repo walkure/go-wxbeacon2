@@ -11,7 +11,7 @@ import (
 type WxCallback func(data interface{})
 
 
-type WxBeaconDevice struct{
+type Device struct{
 	wxCbFunc WxCallback
 	device gatt.Device
 	targetDeviceId string
@@ -96,7 +96,7 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 	}
 }
 
-func (dev WxBeaconDevice)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+func (dev Device)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 
 	if p.ID() != dev.targetDeviceId {
 		return
@@ -116,15 +116,19 @@ func (dev WxBeaconDevice)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertise
 	}
 }
 
-func NewDevice(deviceId string, cb WxCallback) *WxBeaconDevice {
-	dev := WxBeaconDevice{}
+func NewDevice(deviceId string, cb WxCallback) *Device {
+	dev := Device{}
 
 	dev.targetDeviceId = deviceId
 	dev.wxCbFunc = cb
 	return &dev
 }
 
-func (dev *WxBeaconDevice)WaitForReceiveData() error {
+func (dev *Device)WaitForReceiveData() error {
+
+	if dev == nil || dev.targetDeviceId == "" || dev.wxCbFunc == nil{
+		return nil
+	}
 
 	d, err := gatt.NewDevice()
 	if err != nil {
@@ -140,7 +144,10 @@ func (dev *WxBeaconDevice)WaitForReceiveData() error {
 	return nil
 }
 
-func (dev *WxBeaconDevice) Stop() error {
+func (dev *Device) Stop() error {
+	if dev == nil{
+		return nil
+	}
 	if dev.device == nil{
 		return errors.New("device not initialized")
 	}
