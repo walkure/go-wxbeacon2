@@ -17,7 +17,8 @@ Go Receiver for [WxBeacon2](https://weathernews.jp/smart/wxbeacon2/)([2JCIE-BL](
 # sample code
 ```go
 func main() {
-	err := wxbeacon2.WaitForReceiveData("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", process)
+	dev := wxbeacon2.NewDevice("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", process)
+	err := dev.WaitForReceiveData()
 	if err != nil {
 		log.Fatalf("Failed to open device, err: %s\n", err)
 		return
