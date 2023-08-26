@@ -5,6 +5,7 @@ import (
 	"log"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/bettercap/gatt"
 )
@@ -134,7 +135,7 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 
 func (dev Device)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 
-	if p.ID() != dev.targetDeviceId {
+	if strings.ToUpper(p.ID()) != dev.targetDeviceId {
 		return
 	}
 
@@ -155,7 +156,7 @@ func (dev Device)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rs
 func NewDevice(deviceId string, cb WxCallback) *Device {
 	dev := Device{}
 
-	dev.targetDeviceId = deviceId
+	dev.targetDeviceId = strings.ToUpper(deviceId)
 	dev.wxCbFunc = cb
 	return &dev
 }
