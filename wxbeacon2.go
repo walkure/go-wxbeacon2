@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"log"
 	"errors"
+	"fmt"
 
 	"github.com/bettercap/gatt"
 )
@@ -36,10 +37,45 @@ type WxIMData struct {
 	AccelerationZ uint16
 }
 
+func (d WxIMData) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("Type:IM DeviceId:")
+	sb.WriteString(d.DeviceId)
+	sb.WriteString(fmt.Sprintf(" Sequence:%d", d.Sequence))
+	sb.WriteString(fmt.Sprintf(" Temp:%g", d.Temp))
+	sb.WriteString(fmt.Sprintf(" Humid:%g", d.Humid))
+	sb.WriteString(fmt.Sprintf(" AmbientLight:%d", d.AmbientLight))
+	sb.WriteString(fmt.Sprintf(" UVIndex:%g", d.UVIndex))
+	sb.WriteString(fmt.Sprintf(" Pressure:%g", d.Pressure))
+	sb.WriteString(fmt.Sprintf(" SoundNoise:%g", d.SoundNoise))
+	sb.WriteString(fmt.Sprintf(" AccelerationX:%d", d.AccelerationX))
+	sb.WriteString(fmt.Sprintf(" AccelerationY:%d", d.AccelerationY))
+	sb.WriteString(fmt.Sprintf(" AccelerationZ:%d", d.AccelerationZ))
+	sb.WriteString(fmt.Sprintf(" VBattery:%g", d.VBattery))
+	return sb.String()
+}
+
 type WxEPData struct {
 	commonData
 	DisconfortIndex float64
 	HeatStroke      float64
+}
+
+func (d WxEPData) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("Type:EP DeviceId:")
+	sb.WriteString(d.DeviceId)
+	sb.WriteString(fmt.Sprintf(" Sequence:%d", d.Sequence))
+	sb.WriteString(fmt.Sprintf(" Temp:%g", d.Temp))
+	sb.WriteString(fmt.Sprintf(" Humid:%g", d.Humid))
+	sb.WriteString(fmt.Sprintf(" AmbientLight:%d", d.AmbientLight))
+	sb.WriteString(fmt.Sprintf(" UVIndex:%g", d.UVIndex))
+	sb.WriteString(fmt.Sprintf(" Pressure:%g", d.Pressure))
+	sb.WriteString(fmt.Sprintf(" SoundNoise:%g", d.SoundNoise))
+	sb.WriteString(fmt.Sprintf(" DisconfortIndex:%g", d.DisconfortIndex))
+	sb.WriteString(fmt.Sprintf(" HeatStroke:%g", d.HeatStroke))
+	sb.WriteString(fmt.Sprintf(" VBattery:%g", d.VBattery))
+	return sb.String()
 }
 
 //cast pattern : https://play.golang.org/p/n1_YO_t2gYK
