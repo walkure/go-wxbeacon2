@@ -4,11 +4,19 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/walkure/gatt"
+	glogger "github.com/walkure/gatt/logger"
 )
+
+var logger = slog.Default()
+
+func SetLogger(newLogger *slog.Logger) {
+	logger = newLogger
+	glogger.SetLogger(newLogger)
+}
 
 type WxCallback func(data interface{})
 
@@ -154,7 +162,7 @@ func (dev Device) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, r
 	case "IM":
 		dev.wxCbFunc(parseIM(p.ID(), rssi, a.ManufacturerData))
 	default:
-		log.Fatalf("Unknown Name:%s", p.Name())
+		logger.Error("Unexpected Name", "DeviceName", p.Name())
 	}
 }
 

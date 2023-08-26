@@ -2,15 +2,21 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
+
 	"github.com/walkure/go-wxbeacon2"
-	"log"
 )
 
 func main() {
+	wxbeacon2.SetLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})))
+
 	dev := wxbeacon2.NewDevice("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", printData)
 	err := dev.WaitForReceiveData()
 	if err != nil {
-		log.Fatalf("Failed to open device, err: %s\n", err)
+		slog.Error(fmt.Sprintf("Failed to open device:%v", err))
 		return
 	}
 
@@ -20,8 +26,8 @@ func main() {
 func printData(data interface{}) {
 	v, ok := data.(fmt.Stringer)
 	if ok {
-		log.Printf(v.String())
+		slog.Info(v.String())
 	} else {
-		log.Printf("Unknown data type(%T)", v)
+		slog.Error(fmt.Sprintf("Unknown data type(%T)", v))
 	}
 }
