@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/bettercap/gatt"
+	"github.com/walkure/gatt"
 )
 
 type WxCallback func(data interface{})
@@ -140,6 +140,7 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 func (dev Device) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 
 	if strings.ToUpper(p.ID()) != dev.targetDeviceId {
+		//log.Printf("ignore device:%q %q", p.ID(),p.Name())
 		return
 	}
 
@@ -170,8 +171,7 @@ func (dev *Device) WaitForReceiveData() error {
 	if dev == nil || dev.targetDeviceId == "" || dev.wxCbFunc == nil {
 		return nil
 	}
-
-	d, err := gatt.NewDevice()
+	d, err := gatt.NewDevice(gatt.LnxSetScanMode(false))
 	if err != nil {
 		return err
 	}

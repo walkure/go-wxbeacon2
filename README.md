@@ -4,8 +4,8 @@ Go Receiver for [WxBeacon2](https://weathernews.jp/smart/wxbeacon2/)([2JCIE-BL](
 
 # dependencies
 
-- [bettercap/gatt](https://github.com/bettercap/gatt)
-  - most active repository forked from [paypal/gatt](https://github.com/paypal/gatt) in May 2021.
+- [gatt](https://github.com/walkure/gatt)
+  - modified from [bettercap/gatt](https://github.com/bettercap/gatt) which is most active repository forked from [paypal/gatt](https://github.com/paypal/gatt) in May 2021.
 
 
 # references
