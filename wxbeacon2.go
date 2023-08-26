@@ -20,6 +20,7 @@ type Device struct{
 }
 
 type commonData struct {
+	RSSI         int
 	DeviceId     string
 	Sequence     byte
 	Temp         float64
@@ -42,6 +43,7 @@ func (d WxIMData) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("Type:IM DeviceId:")
 	sb.WriteString(d.DeviceId)
+	sb.WriteString(fmt.Sprintf(" RSSI:%d", d.RSSI))
 	sb.WriteString(fmt.Sprintf(" Sequence:%d", d.Sequence))
 	sb.WriteString(fmt.Sprintf(" Temp:%g", d.Temp))
 	sb.WriteString(fmt.Sprintf(" Humid:%g", d.Humid))
@@ -66,6 +68,7 @@ func (d WxEPData) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("Type:EP DeviceId:")
 	sb.WriteString(d.DeviceId)
+	sb.WriteString(fmt.Sprintf(" RSSI:%d", d.RSSI))
 	sb.WriteString(fmt.Sprintf(" Sequence:%d", d.Sequence))
 	sb.WriteString(fmt.Sprintf(" Temp:%g", d.Temp))
 	sb.WriteString(fmt.Sprintf(" Humid:%g", d.Humid))
@@ -81,9 +84,10 @@ func (d WxEPData) String() string {
 
 //cast pattern : https://play.golang.org/p/n1_YO_t2gYK
 
-func parseIM(deviceId string, data []byte) WxIMData {
+func parseIM(deviceId string, rssi int, data []byte) WxIMData {
 	parsed := WxIMData{}
 
+	parsed.RSSI = rssi
 	parsed.DeviceId = deviceId
 	parsed.Sequence = data[2]
 	parsed.Temp = float64(int16(binary.LittleEndian.Uint16(data[3:5]))) / 100
@@ -102,9 +106,10 @@ func parseIM(deviceId string, data []byte) WxIMData {
 	return parsed
 }
 
-func parseEP(deviceId string, data []byte) WxEPData {
+func parseEP(deviceId string, rssi int, data []byte) WxEPData {
 	parsed := WxEPData{}
 
+	parsed.RSSI = rssi
 	parsed.DeviceId = deviceId
 	parsed.Sequence = data[2]
 	parsed.Temp = float64(int16(binary.LittleEndian.Uint16(data[3:5]))) / 100
@@ -145,9 +150,9 @@ func (dev Device)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rs
 
 	switch p.Name() {
 	case "EP":
-		dev.wxCbFunc(parseEP(p.ID(), a.ManufacturerData))
+		dev.wxCbFunc(parseEP(p.ID(), rssi, a.ManufacturerData))
 	case "IM":
-		dev.wxCbFunc(parseIM(p.ID(), a.ManufacturerData))
+		dev.wxCbFunc(parseIM(p.ID(), rssi, a.ManufacturerData))
 	default:
 		log.Fatalf("Unknown Name:%s", p.Name())
 	}
