@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/walkure/go-wxbeacon2"
 	"fmt"
+	"github.com/walkure/go-wxbeacon2"
 	"log"
 )
 

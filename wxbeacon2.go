@@ -2,9 +2,9 @@ package wxbeacon2
 
 import (
 	"encoding/binary"
-	"log"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/bettercap/gatt"
@@ -12,10 +12,9 @@ import (
 
 type WxCallback func(data interface{})
 
-
-type Device struct{
-	wxCbFunc WxCallback
-	device gatt.Device
+type Device struct {
+	wxCbFunc       WxCallback
+	device         gatt.Device
 	targetDeviceId string
 }
 
@@ -138,7 +137,7 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 	}
 }
 
-func (dev Device)onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+func (dev Device) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 
 	if strings.ToUpper(p.ID()) != dev.targetDeviceId {
 		return
@@ -166,9 +165,9 @@ func NewDevice(deviceId string, cb WxCallback) *Device {
 	return &dev
 }
 
-func (dev *Device)WaitForReceiveData() error {
+func (dev *Device) WaitForReceiveData() error {
 
-	if dev == nil || dev.targetDeviceId == "" || dev.wxCbFunc == nil{
+	if dev == nil || dev.targetDeviceId == "" || dev.wxCbFunc == nil {
 		return nil
 	}
 
@@ -187,10 +186,10 @@ func (dev *Device)WaitForReceiveData() error {
 }
 
 func (dev *Device) Stop() error {
-	if dev == nil{
+	if dev == nil {
 		return nil
 	}
-	if dev.device == nil{
+	if dev.device == nil {
 		return errors.New("device not initialized")
 	}
 	err := dev.device.Stop()
