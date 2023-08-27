@@ -65,6 +65,25 @@ func (d WxIMData) String() string {
 	return sb.String()
 }
 
+func (d WxIMData) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("type", "IM"),
+		slog.String("deviceId", d.DeviceId),
+		slog.Int("rssi", d.RSSI),
+		slog.Uint64("sequence", uint64(d.Sequence)),
+		slog.Float64("temperature", d.Temp),
+		slog.Float64("relativeHumidity", d.Humid),
+		slog.Uint64("ambientLight", uint64(d.AmbientLight)),
+		slog.Float64("uvIndex", d.UVIndex),
+		slog.Float64("pressure", d.Pressure),
+		slog.Float64("soundNoise", d.SoundNoise),
+		slog.Uint64("accelerationX", uint64(d.AccelerationX)),
+		slog.Uint64("accelerationY", uint64(d.AccelerationY)),
+		slog.Uint64("accelerationZ", uint64(d.AccelerationZ)),
+		slog.Float64("vBattery", d.VBattery),
+	)
+}
+
 type WxEPData struct {
 	commonData
 	DisconfortIndex float64
@@ -87,6 +106,24 @@ func (d WxEPData) String() string {
 	sb.WriteString(fmt.Sprintf(" HeatStroke:%g", d.HeatStroke))
 	sb.WriteString(fmt.Sprintf(" VBattery:%g", d.VBattery))
 	return sb.String()
+}
+
+func (d WxEPData) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("type", "EP"),
+		slog.String("deviceId", d.DeviceId),
+		slog.Int("rssi", d.RSSI),
+		slog.Uint64("sequence", uint64(d.Sequence)),
+		slog.Float64("temperature", d.Temp),
+		slog.Float64("relativeHumidity", d.Humid),
+		slog.Uint64("ambientLight", uint64(d.AmbientLight)),
+		slog.Float64("uvIndex", d.UVIndex),
+		slog.Float64("pressure", d.Pressure),
+		slog.Float64("soundNoise", d.SoundNoise),
+		slog.Float64("disconfortIndex", d.DisconfortIndex),
+		slog.Float64("heatStroke", d.HeatStroke),
+		slog.Float64("vBattery", d.VBattery),
+	)
 }
 
 //cast pattern : https://play.golang.org/p/n1_YO_t2gYK
