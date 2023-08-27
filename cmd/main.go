@@ -28,6 +28,6 @@ func printData(data interface{}) {
 	if ok {
 		slog.Info(v.String())
 	} else {
-		slog.Error(fmt.Sprintf("Unknown data type(%T)", v))
+		slog.Error(fmt.Sprintf("Unknown data type(%T)", data))
 	}
 }
