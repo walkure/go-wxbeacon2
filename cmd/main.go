@@ -24,9 +24,9 @@ func main() {
 }
 
 func printData(data interface{}) {
-	v, ok := data.(fmt.Stringer)
+	v, ok := data.(slog.LogValuer)
 	if ok {
-		slog.Info(v.String())
+		slog.Info("packet received", "data", v)
 	} else {
 		slog.Error(fmt.Sprintf("Unknown data type(%T)", data))
 	}
