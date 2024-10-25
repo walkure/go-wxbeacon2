@@ -2,50 +2,49 @@ package wxbeacon2
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 
 	"github.com/walkure/gatt"
-	glogger "github.com/walkure/gatt/logger"
+	"github.com/walkure/gatt/logger"
 )
 
-var logger = slog.Default()
-
-func SetLogger(newLogger *slog.Logger) {
-	logger = newLogger
-	glogger.SetLogger(newLogger)
-}
-
-type WxCallback func(data interface{})
-
-type Device struct {
-	wxCbFunc       WxCallback
-	device         gatt.Device
-	targetDeviceId string
-}
-
 type commonData struct {
-	RSSI         int
-	DeviceId     string
-	Sequence     byte
-	Temp         float64
-	Humid        float64
+	// RSSI is the signal strength
+	RSSI int
+	// DeviceId is the MAC address of the beacon
+	DeviceId string
+	// Sequence is the sequence number
+	Sequence byte
+	// Temp is the temperature celcius in 0.01 unit
+	Temp float64
+	// Humid is the relative humidity in 0.01%
+	Humid float64
+	// AmbientLight is the ambient light in lx
 	AmbientLight uint16
-	UVIndex      float64
-	Pressure     float64
-	SoundNoise   float64
-	VBattery     float64
+	// UVIndex is the UV index count in 0.01 unit
+	UVIndex float64
+	// Pressure is the atmospheric pressure in 0.1hPa
+	Pressure float64
+	// SoundNoise is the sound noise in 0.01dB
+	SoundNoise float64
+	// VBattery is the battery voltage in 0.01V
+	VBattery float64
 }
 
+// WxIMData is the data structure of the IM type (General/Limited Broadcaster 1)
 type WxIMData struct {
 	commonData
+	// AccelerationX is the acceleration in X axis
 	AccelerationX uint16
+	// AccelerationY is the acceleration in Y axis
 	AccelerationY uint16
+	// AccelerationZ is the acceleration in Z axis
 	AccelerationZ uint16
 }
 
+// String returns a string representation of the WxIMData
 func (d WxIMData) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("Type:IM DeviceId:")
@@ -65,6 +64,7 @@ func (d WxIMData) String() string {
 	return sb.String()
 }
 
+// LogValue returns slog.GroupValue of the WxIMData
 func (d WxIMData) LogValue() slog.Value {
 	return slog.GroupValue(
 		slog.String("type", "IM"),
@@ -84,12 +84,21 @@ func (d WxIMData) LogValue() slog.Value {
 	)
 }
 
-type WxEPData struct {
-	commonData
-	DisconfortIndex float64
-	HeatStroke      float64
+// WxDataSequence returns the sequence number of the WxIMData
+func (d WxIMData) WxDataSequence() uint8 {
+	return d.Sequence
 }
 
+// WxEPData is the data structure of the EP type (General/Limited Broadcaster 2)
+type WxEPData struct {
+	commonData
+	// DisconfortIndex is the disconfort index in 0.01 unit
+	DisconfortIndex float64
+	// HeatStroke is the heat stroke in 0.01 degree celcius
+	HeatStroke float64
+}
+
+// String returns a string representation of the WxEPData
 func (d WxEPData) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("Type:EP DeviceId:")
@@ -108,6 +117,7 @@ func (d WxEPData) String() string {
 	return sb.String()
 }
 
+// LogValue returns slog.GroupValue of the WxEPData
 func (d WxEPData) LogValue() slog.Value {
 	return slog.GroupValue(
 		slog.String("type", "EP"),
@@ -124,6 +134,11 @@ func (d WxEPData) LogValue() slog.Value {
 		slog.Float64("heatStroke", d.HeatStroke),
 		slog.Float64("vBattery", d.VBattery),
 	)
+}
+
+// WxDataSequence returns the sequence number of the WxEPData
+func (d WxEPData) WxDataSequence() uint8 {
+	return d.Sequence
 }
 
 //cast pattern : https://play.golang.org/p/n1_YO_t2gYK
@@ -171,73 +186,75 @@ func parseEP(deviceId string, rssi int, data []byte) WxEPData {
 	return parsed
 }
 
-func onStateChanged(d gatt.Device, s gatt.State) {
-	switch s {
-	case gatt.StatePoweredOn:
-		// allow duplicate
-		d.Scan([]gatt.UUID{}, true)
-		return
-	default:
-		d.StopScanning()
+// WxData is the interface of WxIMData and WxEPData
+type WxData interface {
+	// String is `fmt.Stringer` interface
+	String() string
+	// LogValue is `slog.LogValuer` interface
+	LogValue() slog.Value
+	// WxDataSequence returns the sequence number of the WxData
+	WxDataSequence() byte
+}
+
+var _ WxData = WxIMData{}
+var _ WxData = WxEPData{}
+
+// The Company Identifier of OMRON Corporation
+const companyID = 0x02d5
+
+// HandleWxBeacon2 returns a callback function for `gatt.PeripheralDiscovered` that can be used to handle the WxBeacon2 device.
+// This function is used to parse the `ADV_IND` packet of the WxBeacon2 device.
+// Passive scanning is recommended. ( `SCAN_RSP` packet is not supported.)
+//
+// The deviceId is the device id of the target WxBeacon2 device. if it is empty, all WxBeacon2 devices will be handled.
+// The cb function will be called with new goroutine when receives the advertisement packet from a WxBeacon2 device.
+// The next function will be called if the device is not a target WxBeacon2 device and can be null.
+func HandleWxBeacon2(deviceId string, cb func(d WxData),
+	next func(gatt.Peripheral, *gatt.Advertisement, int)) func(gatt.Peripheral, *gatt.Advertisement, int) {
+	if cb == nil {
+		panic("cb is nil")
+	}
+	if next == nil {
+		next = func(gatt.Peripheral, *gatt.Advertisement, int) {}
+	}
+
+	deviceId = strings.ToUpper(deviceId)
+
+	return func(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+		if a.CompanyID != companyID {
+			// Another Manufacturer
+			next(p, a, rssi)
+			return
+		}
+
+		devId := strings.ToUpper(p.ID())
+		if deviceId != "" && devId != deviceId {
+			// Not the target device
+			next(p, a, rssi)
+			return
+		}
+
+		if len(a.ManufacturerData) < 22 {
+			// Truncated data
+			next(p, a, rssi)
+			return
+		}
+
+		switch p.Name() {
+		case "EP":
+			cb(parseEP(devId, rssi, a.ManufacturerData))
+			return
+		case "IM":
+			cb(parseIM(devId, rssi, a.ManufacturerData))
+			return
+		}
+
+		// Unknown device Name
+		next(p, a, rssi)
 	}
 }
 
-func (dev Device) onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
-
-	if strings.ToUpper(p.ID()) != dev.targetDeviceId {
-		//log.Printf("ignore device:%q %q", p.ID(),p.Name())
-		return
-	}
-
-	if dev.wxCbFunc == nil {
-		return
-	}
-
-	switch p.Name() {
-	case "EP":
-		dev.wxCbFunc(parseEP(p.ID(), rssi, a.ManufacturerData))
-	case "IM":
-		dev.wxCbFunc(parseIM(p.ID(), rssi, a.ManufacturerData))
-	default:
-		logger.Error("Unexpected Name", "DeviceName", p.Name())
-	}
-}
-
-func NewDevice(deviceId string, cb WxCallback) *Device {
-	dev := Device{}
-
-	dev.targetDeviceId = strings.ToUpper(deviceId)
-	dev.wxCbFunc = cb
-	return &dev
-}
-
-func (dev *Device) WaitForReceiveData() error {
-
-	if dev == nil || dev.targetDeviceId == "" || dev.wxCbFunc == nil {
-		return nil
-	}
-	d, err := gatt.NewDevice(gatt.LnxSetScanMode(false))
-	if err != nil {
-		return err
-	}
-
-	dev.device = d
-
-	// Register handlers.
-	d.Handle(gatt.PeripheralDiscovered(dev.onPeriphDiscovered))
-	d.Init(onStateChanged)
-
-	return nil
-}
-
-func (dev *Device) Stop() error {
-	if dev == nil {
-		return nil
-	}
-	if dev.device == nil {
-		return errors.New("device not initialized")
-	}
-	err := dev.device.Stop()
-	dev.device = nil
-	return err
+// SetLogger sets the logger for the package
+func SetLogger(newLogger *slog.Logger) {
+	logger.SetLogger(newLogger)
 }

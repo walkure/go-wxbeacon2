@@ -1,33 +1,66 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
+	"sync"
 
+	"github.com/walkure/gatt"
 	"github.com/walkure/go-wxbeacon2"
 )
 
 func main() {
-	wxbeacon2.SetLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	})))
+	// Passive scanning
+	d, err := gatt.NewDevice(gatt.LnxSetScanMode(false))
 
-	dev := wxbeacon2.NewDevice("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", printData)
-	err := dev.WaitForReceiveData()
 	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to open device:%v", err))
-		return
+		panic(err)
 	}
 
-	select {}
+	var mu sync.Mutex
+	seqno := uint8(0)
+
+	d.Handle(gatt.PeripheralDiscovered(
+		wxbeacon2.HandleWxBeacon2("", // "aa:zz:pp:ff:dd:cc"
+			func(d wxbeacon2.WxData) {
+				// GATT lib. calls this callback function with a new goroutine.
+				mu.Lock()
+				defer mu.Unlock()
+
+				if seqno != d.WxDataSequence() {
+					v, ok := d.(slog.LogValuer)
+					if ok {
+						slog.Info("packet received", "data", v)
+					} else {
+						slog.Error(fmt.Sprintf("Unknown data type(%T)", d))
+					}
+
+					seqno = d.WxDataSequence()
+				}
+
+			}, nil)))
+	d.Init(onStateChanged)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	<-ctx.Done()
+	fmt.Println("interrupted. Bye~")
+
+	d.StopScanning()
+	fmt.Printf("scan stopped: %+v\n", d.Stop())
 }
 
-func printData(data interface{}) {
-	v, ok := data.(slog.LogValuer)
-	if ok {
-		slog.Info("packet received", "data", v)
-	} else {
-		slog.Error(fmt.Sprintf("Unknown data type(%T)", data))
+func onStateChanged(d gatt.Device, s gatt.State) {
+	switch s {
+	case gatt.StatePoweredOn:
+		// allow duplicate
+		d.Scan([]gatt.UUID{}, true)
+		return
+	default:
+		d.StopScanning()
 	}
 }

@@ -15,25 +15,8 @@ Go Receiver for [WxBeacon2](https://weathernews.jp/smart/wxbeacon2/)([2JCIE-BL](
    - [English HTML](https://omronmicrodevices.github.io/products/2jcie-bl01/communication_if_manual.html)
 
 # sample code
-```go
-func main() {
-	dev := wxbeacon2.NewDevice("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", process)
-	err := dev.WaitForReceiveData()
-	if err != nil {
-		log.Fatalf("Failed to open device, err: %s\n", err)
-		return
-	}
 
-	select {}
-}
-func process(data interface{}){
-	switch v := data.(type) {
-	case wxbeacon2.WxIMData:
-        // process IM Mode Data
-	case wxbeacon2.WxEPData:
-        // process EP Mode Data
-}
-```
+see `cmd/main.go`
 
 # notice
  - Currently this code supports `Limited/General Broadcaster` mode(see reference).
